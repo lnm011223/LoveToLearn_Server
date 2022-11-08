@@ -1,0 +1,110 @@
+<?php
+
+class MerchantFreezeController extends BaseController {
+
+    protected $model = '';
+
+    public function init() {
+        $this->model = substr(__CLASS__, 0, -10);
+        parent::init();
+        //dump(Yii::app()->request->isPostRequest);
+    }
+
+    
+    public function actionDelete($id) {
+        parent::_clear($id);
+    }
+    public function actionChange($id) {
+        $model= $modelName::model()->find("merchant_id='".$id."'");
+        $model->merchant_freeze_state='';
+        $model->save();
+    }
+
+
+    public function actionCreate() {   
+        $modelName = $this->model;
+        $model = new $modelName('create');
+        $data = array();
+        if (!Yii::app()->request->isPostRequest) {
+            //自动生成订单编号，年份+6位随机数字
+            $sn = date('Y').substr(microtime(),2,6);
+            $model->merchant_num = $sn;
+            $model->id=$sn;
+            $data['model'] = $model;
+            $this->render('update', $data);
+        }else{
+            $this-> saveData($model,$_POST[$modelName]);
+        }
+    }
+
+
+
+  
+    public function actionUpdate($id) {
+        $modelName = $this->model;
+        $model = $this->loadModel($id, $modelName);
+        if (!Yii::app()->request->isPostRequest) {
+           $data = array();
+           $data['model'] = $model;
+           $this->render('update', $data);
+        } else {
+           $this-> saveData($model,$_POST[$modelName]);
+        }
+    }/*曾老师保留部份，---结束*/
+
+    ///列表搜索
+    public function actionaIndex( $keywords = '') {
+        set_cookie('_currentUrl_', Yii::app()->request->url);
+        $modelName = $this->model;
+        $model = $modelName::model();
+
+        $criteria = new CDbCriteria;
+        //$criteria->condition = "club_name='".$keywords."'";
+       //$criteria->order = 'club_code';
+ 
+        $data = array();
+        parent::_list($model, $criteria, 'index', $data);
+    }
+
+    ///列表搜索
+    public function actionIndex( $keywords = '') {
+        set_cookie('_currentUrl_', Yii::app()->request->url);
+        $modelName = $this->model;
+        $model = $modelName::model();
+        $criteria = new CDbCriteria;
+        $data = array();
+        parent::_list($model, $criteria, 'index', $data);
+    }
+
+    //导航至detail
+    public function actionDetail($id) {
+         $test = new Test();
+       
+         put_msg($_POST);
+        $modelName = $this->model;
+        $model = $this->loadModel($id, $modelName);
+        if (!Yii::app()->request->isPostRequest) {
+           $data = array();
+           $data['model'] = $model;
+           $this->render('detail', $data);
+        } else {
+            // put_msg($_POST);
+            $tname = $this->model;
+            $tmodel= $tname::model()->find("merchant_num='".$id."'");
+            if(!empty($tmodel)){
+                $tmodel->merchant_freeze_state='已撤销';
+                $tmodel->save();
+            }
+           $this-> saveData($model,$_POST[$modelName]);
+        }
+    }
+
+
+
+    function saveData($model,$post) {
+        //将model属性提交到数据库
+       $model->attributes=$post;
+       show_status($model->save(),'保存成功', get_cookie('_currentUrl_'),'保存失败');  
+    }
+
+}
